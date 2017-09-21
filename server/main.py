@@ -8,13 +8,22 @@ import webapp2
 import holiday
 import user
 
+#
+# support PATCH methods, as long as
+# https://code.google.com/archive/p/webapp-improved/issues/69 is not merged
+# to mainline.
+allowed_methods = webapp2.WSGIApplication.allowed_methods
+new_allowed_methods = allowed_methods.union(('PATCH',))
+webapp2.WSGIApplication.allowed_methods = new_allowed_methods
+
 app = webapp2.WSGIApplication([
     ('/user', user.UserCollection),
     # ('/user/([^/]+)', user.User),
     ('/user/([^/]+)/(meta|active)?', user.User),
     ('/user/([^/]+)/report/?(.+)?', user.Report),
     ('/user/([^/]+)/day/?(.+)', user.Day),
-    ('/holiday', holiday.Calendar)
+    ('/holiday$', holiday.CalendarList),
+    ('/holiday/([^/]+)', holiday.CalendarDay),
 ], debug=True)
 
 

@@ -55,24 +55,25 @@ class User:
 class Holiday:
     """provides getList, add, update, delete methods"""
     def __init__(self):
-        self.holidays = [{'date': '2017-12-25', 'name': 'Christmas'}]
+        self.holidays = {1: {'date': '2017-12-25', 'name': 'Christmas'}}
         self.lastId = 1
 
     def getList(self, year):
         retlist = []
-        for h in self.holidays:
+        for hid, h in self.holidays.iteritems():
             hyear = re.match('\d+', h['date']).group(0)
             if hyear == year:
-                retlist.append(h)
+                retlist.append(dict(h, id=hid))
         return retlist
 
     def add(self, data):
-        self.holidays[self.lastId] = data
-        holiday = self.holidays[self.lastId]['id'] = self.lastId
-        self.lastID += 1
+        holiday = self.holidays[self.lastId] = data
+        self.holidays[self.lastId]['id'] = self.lastId
+        self.lastId += 1
         return holiday
 
     def update(self, hid, data):
+        hid = int(hid)
         if hid in self.holidays:
             self.holidays[hid].update(data)
             return self.holidays[hid]
@@ -80,6 +81,9 @@ class Holiday:
             raise Exception('holiday not found')
 
     def delete(self, hid):
-        """Returns true if the id was found"""
-        return self.holidays.pop(hid, False) != False
+        """Returns true if the id was found
+        @type hid: int
+        @param hid: integer id of the holiday
+        """
+        return self.holidays.pop(int(hid), False) != False
 
