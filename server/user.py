@@ -70,6 +70,17 @@ class User(webapp2.RequestHandler):
             self.response.status = 404
             self.response.write(json.dumps({'error': 'Not found'}))
 
+    def post(self):
+        """Authenticates the user"""
+        credentials = json.loads(self.request.body)
+        if model.user.auth(credentials['email'], credentials['password']):
+            self.response.status = 200
+            self.response.write(json.dumps({'status': 'OK'}))
+        else:
+            self.response.status = 401
+            self.response.write(json.dumps({'error': 'Unauthorized'}))
+
+
 class Report(webapp2.RequestHandler):
     """Handles week locking, unlocking, and getting overtime status"""
 

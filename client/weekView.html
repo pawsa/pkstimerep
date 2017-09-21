@@ -1,0 +1,27 @@
+<h1 class="page-header">Weekly report</h1>
+<p class="lead">Enter your weekly report here. When done with the week report, lock it.</p>
+<div class="table-responsive" ng-if="$ctrl.days">
+  <table class="table table-striped">
+    <thead>
+      <tr>
+	<th>Date</th><th>Arrival</th><th>Break</th><th>Departure</th><th>Extra</th>
+	<th>Type</th><th>.</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="d in $ctrl.days">
+	<td>{{ d.date }}</td>
+	<td><input ng-model='d.arrival' placeholder='Arrival'></input></td>
+	<td><input ng-model='d.break' placeholder='Break'></input></td>
+	<td><input ng-model='d.departure' placeholder='Departure'></input></td>
+	<td><input ng-model='d.extra' placeholder='Extra (m)'></input></td>
+	<td><day-type-selector></day-type-selector>
+	<td><button class="btn btn-default">Update</button>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div ng-if="!$ctrl.days">Reading...</div>
+<div ng-enable="$ctrl.days">
+  <button class="btn btn-danger" ng-click="$ctrl.lock()">Lock</button>
+</div>

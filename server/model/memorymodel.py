@@ -34,22 +34,25 @@ class User:
     """provides getList, add, update methods"""
     def __init__(self):
         self.users = dict()
-        self.lastId = 100000
         
     def getList(self):
         return self.users.values()
 
     def add(self, data):
-        user = self.users[self.lastId] = data
-        user['id'] = self.lastId
-        self.lastId += 1
-        return user
+        if data['email'] in self.users:
+           raise Exception("User already exists")
+        self.users[data['email']] = data
+        return data
 
     def update(self, userid, userData):
         if userid in self.users:
             self.users[userid].update(userData)
             return self.users[userid]
         raise Exception('Nonexisting user')
+
+    def auth(self, userid, password):
+        user = self.users.get(userid)
+        return user and user['password'] == password
 
 
 class Holiday:

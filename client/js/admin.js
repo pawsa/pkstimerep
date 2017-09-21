@@ -35,7 +35,6 @@ angular.module('PtsAdmin').component('userList', {
     templateUrl: 'userList.html',
     controller: UserListController,
     bindings: {
-	/* hero: '=' */
     }
 });
 
@@ -48,11 +47,12 @@ function UserAddController($http) {
     };
 
     ctrl.add = function () {
-	$http.post('user', {login: ctrl.login, realname: ctrl.realname,
+	$http.post('user', {email: ctrl.email, realname: ctrl.realname,
+			    password: ctrl.password,
 			    status: 'active'}).then(
 	    function (response) {	
 		ctrl.inputsShown = false;
-		ctrl.login = ctrl.realname = '';
+		ctrl.email = ctrl.realname = ctrl.password = '';
 		ctrl.onAdd();
 	    }).catch(function (err) {
 		console.log('error', err);
@@ -61,8 +61,9 @@ function UserAddController($http) {
 };
 
 var UserAddTemplate = "<button ng-click='$ctrl.showAdd()' ng-if='!$ctrl.inputsShown'>Add</button>"+
-    "<div ng-if='$ctrl.inputsShown'><input ng-model='$ctrl.login' placeholder='Login'>" +
+    "<div ng-if='$ctrl.inputsShown'><input ng-model='$ctrl.email' placeholder='Email'>" +
     "<input ng-model='$ctrl.realname' placeholder='Real Name'>" +
+    "<input ng-model='$ctrl.password' placeholder='Password' type='password'>" +
     "<button ng-click='$ctrl.add()'>Add</button></div>";
 
 angular.module('PtsAdmin').component('userAdd', {

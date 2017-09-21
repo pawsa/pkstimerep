@@ -23,20 +23,40 @@ class UserTest(unittest.TestCase):
         users = json.loads(response.body)
         self.assertIn('users', users)
 
-    def test_add(self):
+    def test_add_auth(self):
 
         request = webapp2.Request.blank('/user',
                                         headers=[('content-type',
                                                   'application/json')])
         request.method = 'POST'
-        request.body = json.dumps({'login': 'a', 'name': 'N', 'rights': 'a'})
+        request.body = json.dumps({'email': 'a', 'name': 'N', 'status': 'active',
+                                   'password': 'x'})
         response = request.get_response(main.app)
         
         self.assertEqual(response.status_int, 200)
         user = json.loads(response.body)
         self.assertIn('u', user)
-        self.assertIn('login', user['u'])
+        self.assertIn('email', user['u'])
 
+        # Successful auth
+        request = webapp2.Request.blank('/user/auth',
+                                        headers=[('content-type',
+                                                  'application/json')])
+        request.method = 'POST'
+        request.body = json.dumps({'email': 'a', 'password': 'x'})
+        response = request.get_response(main.app)
+
+        self.assertEqual(response.status_int, 200)
+
+        # failed auth
+        request = webapp2.Request.blank('/user/auth',
+                                        headers=[('content-type',
+                                                  'application/json')])
+        request.method = 'POST'
+        request.body = json.dumps({'email': 'a', 'password': 'b'})
+        response = request.get_response(main.app)
+
+        self.assertEqual(response.status_int, 401)
 
 class HolidayTest(unittest.TestCase):
     """Holiday operations: listing, adding, updating, deleting."""
