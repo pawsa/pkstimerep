@@ -1,0 +1,15 @@
+<h1 class="page-header">Users</h1>
+<user-add on-add="$ctrl.onAdd()"></user-add>
+<div class="table-responsive" ng-if="$ctrl.users.length>0">
+  <table class="table table-striped">
+    <thead>
+      <tr><th>Login</th><th>Name</th><th>Status</th><th>..</th></tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="u in $ctrl.users">
+	<td>{{ u.login }}</td><td>{{ u.realname }}</td><td>{{ u.status }}</td><td>.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div ng-if="!$ctrl.users">No users</div>

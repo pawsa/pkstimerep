@@ -1,0 +1,13 @@
+runtime: python27
+threadsafe: true
+
+handlers:
+- url: /(user|calendar)
+  script: server.main.app
+
+- url: /
+  static_files: client/index.html
+  upload: client/index.html
+
+- url: /js
+  static_dir: client/js
