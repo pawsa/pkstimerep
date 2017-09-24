@@ -3,13 +3,15 @@
 """Provides User and Holiday classes with the required methods."""
 
 import collections
+import isoweek
 import re
+
 
 class Day:
     """provides getList, add, update methods"""
     def __init__(self):
         self.days = collections.defaultdict(list)
-        
+
     def getList(self, userid, start, end):
         return [d for d in self.days[userid] if start <= d['date'] <= end]
 
@@ -34,13 +36,13 @@ class User:
     """provides getList, add, update methods"""
     def __init__(self):
         self.users = dict()
-        
+
     def getList(self):
         return self.users.values()
 
     def add(self, data):
         if data['email'] in self.users:
-           raise Exception("User already exists")
+            raise Exception("User already exists")
         self.users[data['email']] = data
         return data
 
@@ -88,5 +90,29 @@ class Holiday:
         @type hid: int
         @param hid: integer id of the holiday
         """
-        return self.holidays.pop(int(hid), False) != False
+        return self.holidays.pop(int(hid), False) is not False
 
+
+class WeeklyReport:
+    """provides a list of weekly reports for the user. Weekly report is
+    essentially just an overtime status measured in minutes."""
+
+    def __init__(self):
+        self.reports = collections.defaultdict(dict)
+
+    def getList(self, userid, start, count=None):
+        """returns list segment [start:start+count], sorted by time in a
+        descending order."""
+        userReport = self.reports[userid]
+        keys = sorted(userReport.keys(), reverse=True)
+        end = len(keys) if count is None else start+count
+        return [userReport[k] for k in keys[start:end]]
+
+    def add(self, userid, data):
+        """@note: No order or data consistency checks are done here."""
+        key = isoweek.Week(data['year'], data['week']).isoformat()
+        self.reports[userid][key] = data
+
+    def delete(self, userid, year, week):
+        key = isoweek.Week(year, week).isoformat()
+        del self.reports[userid][key]

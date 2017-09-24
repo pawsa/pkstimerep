@@ -19,9 +19,10 @@ webapp2.WSGIApplication.allowed_methods = new_allowed_methods
 app = webapp2.WSGIApplication([
     ('/user', user.UserCollection),
     ('/user/auth', user.User),
-    ('/user/([^/]+)/(meta|active)?', user.User),
-    ('/user/([^/]+)/report/?(.+)?', user.Report),
-    ('/user/([^/]+)/day/?(.+)', user.Day),
+    ('/user/([^/]+)/(meta|active)?$', user.User),
+    ('/user/([^/]+)/report', user.Report),
+    ('/user/([^/]+)/report/(.+)', user.Report),
+    ('/user/([^/]+)/day', user.Day),
     ('/holiday$', holiday.CalendarList),
     ('/holiday/([^/]+)', holiday.CalendarDay),
 ], debug=True)

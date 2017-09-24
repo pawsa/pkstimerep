@@ -9,9 +9,13 @@ The model provide its user and holiday members.
 
 def setDevModel():
     import memorymodel
-    global user, holiday
-    user = memorymodel.User()
+    global day, holiday, report, user
+    day = memorymodel.Day()
     holiday = memorymodel.Holiday()
+    report = memorymodel.WeeklyReport()
+    user = memorymodel.User()
 
-user = None
+day = None
 holiday = None
+report = None
+user = None

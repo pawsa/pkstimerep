@@ -66,14 +66,17 @@ PATCH /user/userid/active user activation and deactivation.
 
 
 GET /user/userid/day?start=YYYY-MM-DD&end=YYYY-MM-DD
- - returns day statuses, entry, leave and break times times
+ - returns day statuses, entry, leave and break times times. If range unspecified,
+   returns data for the most recent unlocked week.
+
 PATCH /user/userid/day/YYY-MM-DD - sets day properties
 * DELETE /user/userid/day/YYY-MM-DD - clear any prior data if present
 
 POST /user/userid/report with {year: YYYY, week: WEEKNO} - locks the
  week provided all the data is in place.
 
-*GET /user/userid/report - get the overtime status and the last locked week (returned alos by /user/userid?)
+GET /user/userid/report - get the overtime status and the last locked
+ week (returned alos by /user/userid?)
 
 DELETE /user/userid/report/YYYY-WW - delete given weekly report
 

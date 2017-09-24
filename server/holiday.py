@@ -7,6 +7,7 @@ import webapp2
 
 import model
 
+
 class CalendarList(webapp2.RequestHandler):
 
     def get(self):
@@ -29,8 +30,9 @@ class CalendarDay(webapp2.RequestHandler):
         holiday = json.loads(self.request.body)
         self.response.content_type = 'application/json'
         try:
-            self.response.write(json.dumps({'rd': model.holiday.update(holidayid,
-                                                                       holiday)}))
+            self.response.write(json.dumps({'rd':
+                                            model.holiday.update(holidayid,
+                                                                 holiday)}))
         except Exception as e:
             self.response.status_int = 404
 
