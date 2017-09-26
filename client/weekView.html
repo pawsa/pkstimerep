@@ -11,12 +11,12 @@
     <tbody>
       <tr ng-repeat="d in $ctrl.days">
 	<td>{{ d.date }}</td>
-	<td><input ng-model='d.arrival' placeholder='Arrival'></input></td>
-	<td><input ng-model='d.break' placeholder='Break'></input></td>
-	<td><input ng-model='d.departure' placeholder='Departure'></input></td>
-	<td><input ng-model='d.extra' placeholder='Extra (m)'></input></td>
+	<td><input size=6 ng-model='d.arrival' placeholder='Arrival'></input></td>
+	<td><input size=3 ng-model='d.break' placeholder='Break'></input></td>
+	<td><input size=6 ng-model='d.departure' placeholder='Departure'></input></td>
+	<td><input size=3 ng-model='d.extra' placeholder='Extra (m)'></input></td>
 	<td><day-type-selector></day-type-selector>
-	<td><button class="btn btn-default">Update</button>
+	<td><button ng-click="$ctrl.update(d)" class="btn btn-default">Update</button>
       </tr>
     </tbody>
   </table>

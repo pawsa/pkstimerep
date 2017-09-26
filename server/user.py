@@ -10,6 +10,13 @@ import webapp2
 import model
 
 
+class DateEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime.date):
+            return str(obj)
+        return json.JSONEncoder.default(self, obj)
+
+
 class Day(webapp2.RequestHandler):
 
     def get(self, userid):
@@ -20,26 +27,37 @@ class Day(webapp2.RequestHandler):
         """
         start = self.request.get('start')
         end = self.request.get('end')
-        if not (start and end):
+        if (start and end):
+            start = datetime.datetime.strptime(start, '%Y-%m-%d').date()
+            end = datetime.datetime.strptime(end, '%Y-%m-%d').date()
+        else:
             reports = model.report.getList(userid, 0, 1)
             if len(reports) > 0:
                 nextWeek = isoweek(reports[0].year, reports[0].week+1)
                 start = nextWeek.monday()
                 end = nextWeek.sunday()
         if not (start and end):
-            dt = datetime.datetime.now()
+            dt = datetime.date.today()
             start = dt - datetime.timedelta(days=dt.weekday())
             end = start + datetime.timedelta(days=6)
+        days = model.day.getList(userid, start, end)
+        if not days:  # nothing logged yet. FIXME add an unit test for this
+            while start <= end:
+                days.append({'date': start, 'arrival': '8:00',
+                             'break': 15, 'departure': '16:15',
+                             'extra': 0})
+                start += datetime.timedelta(days=1)
         self.response.content_type = 'application/json'
-        self.response.write(json.dumps({'dl': model.day.getList(userid,
-                                                                start, end)}))
+        self.response.write(json.dumps({'dl': days}, cls=DateEncoder))
 
-    def patch(self, userid, day):
+    def post(self, userid):
         """Sets day properties: 'start', 'end', 'pause', 'type' or comment"""
         dayData = json.loads(self.request.body)
+        date = datetime.datetime.strptime(dayData['date'], '%Y-%m-%d').date()
         self.response.content_type = 'application/json'
-        self.response.write(json.dumps({'d': model.day.update(userid, day,
-                                                              dayData)}))
+        self.response.write(json.dumps({'d': model.day.update(userid, date,
+                                                              dayData)},
+                                       cls=DateEncoder))
 
     def delete(self, userid, day):
         """Clears any prior data pertinent to the day, if allowed."""
@@ -89,7 +107,7 @@ class User(webapp2.RequestHandler):
         credentials = json.loads(self.request.body)
         if model.user.auth(credentials['email'], credentials['password']):
             self.response.status = 200
-            self.response.write(json.dumps({'status': 'OK'}))
+            self.response.write(json.dumps({'token': 'magictoken'}))
         else:
             self.response.status = 401
             self.response.write(json.dumps({'error': 'Unauthorized'}))

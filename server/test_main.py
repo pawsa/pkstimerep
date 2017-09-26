@@ -12,6 +12,30 @@ import model
 HEADERS = [('content-type', 'application/json')]
 
 
+def r_delete(path):
+    request = webapp2.Request.blank(path, headers=HEADERS)
+    request.method = 'DELETE'
+    return request.get_response(main.app)
+
+
+def r_get(path):
+    return webapp2.Request.blank(path).get_response(main.app)
+
+
+def r_patch(path, data):
+    request = webapp2.Request.blank(path, headers=HEADERS)
+    request.method = 'PATCH'
+    request.body = json.dumps(data)
+    return request.get_response(main.app)
+
+
+def r_post(path, data):
+    request = webapp2.Request.blank(path, headers=HEADERS)
+    request.method = 'POST'
+    request.body = json.dumps(data)
+    return request.get_response(main.app)
+
+
 class DayTest(unittest.TestCase):
     """Day operations; listing, adding and editing"""
 
@@ -23,14 +47,27 @@ class DayTest(unittest.TestCase):
             print "SEtup warn", e
 
     def test_get_patch(self):
-        request = webapp2.Request.blank('/user/a/day')
-        response = request.get_response(main.app)
+        response = r_get('/user/a/day')
         self.assertEqual(response.status_int, 200)
         days = json.loads(response.body)
         self.assertIn('dl', days)
+        monday = days['dl'][0]
+        monday['break'] = 15
         # test updating current week
+        respose = r_post('/user/a/day', monday)
+        self.assertEqual(response.status_int, 200)
+
+        # check that the data is there
+        response = r_get('/user/a/day?start={}&end={}'
+                         .format(days['dl'][0]['date'],
+                                 days['dl'][-1]['date']))
+        self.assertEqual(response.status_int, 200)
+        days = json.loads(response.body)
+        self.assertEqual(days['dl'][0]['break'], 15)
 
         # test that updating former week fails
+        response = r_get('/user/a/day')
+        self.assertEqual(response.status_int, 200)
 
         # test that updating future week fails
 
@@ -42,42 +79,27 @@ class UserTest(unittest.TestCase):
         model.setDevModel()
 
     def test_get_list(self):
-        request = webapp2.Request.blank('/user')
-        response = request.get_response(main.app)
+        response = r_get('/user')
 
         self.assertEqual(response.status_int, 200)
         users = json.loads(response.body)
         self.assertIn('users', users)
 
     def test_add_auth(self):
-
-        request = webapp2.Request.blank('/user',
-                                        headers=HEADERS)
-        request.method = 'POST'
-        request.body = json.dumps({'email': 'a', 'name': 'N',
-                                   'status': 'active',
-                                   'password': 'x'})
-        response = request.get_response(main.app)
-
+        response = r_post('/user',
+                          {'email': 'a', 'name': 'N', 'status': 'active',
+                           'password': 'x'})
         self.assertEqual(response.status_int, 200)
         user = json.loads(response.body)
         self.assertIn('u', user)
         self.assertIn('email', user['u'])
 
         # Successful auth
-        request = webapp2.Request.blank('/user/auth', headers=HEADERS)
-        request.method = 'POST'
-        request.body = json.dumps({'email': 'a', 'password': 'x'})
-        response = request.get_response(main.app)
-
+        response = r_post('/user/auth', {'email': 'a', 'password': 'x'})
         self.assertEqual(response.status_int, 200)
 
         # failed auth
-        request = webapp2.Request.blank('/user/auth', headers=HEADERS)
-        request.method = 'POST'
-        request.body = json.dumps({'email': 'a', 'password': 'b'})
-        response = request.get_response(main.app)
-
+        response = r_post('/user/auth', {'email': 'a', 'password': 'b'})
         self.assertEqual(response.status_int, 401)
 
 
@@ -88,8 +110,7 @@ class HolidayTest(unittest.TestCase):
         model.setDevModel()
 
     def test_get_list(self):
-        request = webapp2.Request.blank('/holiday')
-        response = request.get_response(main.app)
+        response = r_get('/holiday')
 
         self.assertEqual(response.status_int, 200)
         holidays = json.loads(response.body)
@@ -97,8 +118,7 @@ class HolidayTest(unittest.TestCase):
         self.assertEqual(holidays['rdl'], [])
 
     def test_get_list_filtered(self):
-        request = webapp2.Request.blank('/holiday?year=2017')
-        response = request.get_response(main.app)
+        response = r_get('/holiday?year=2017')
 
         self.assertEqual(response.status_int, 200)
         holidays = json.loads(response.body)
@@ -107,42 +127,26 @@ class HolidayTest(unittest.TestCase):
         self.assertEqual(len(holidays['rdl']), 1)
 
     def test_post_delete(self):
-        request = webapp2.Request.blank('/holiday', headers=HEADERS)
-        request.method = 'POST'
-        request.body = json.dumps({'date': '2017-01-01', 'name': 'New Year'})
-        response = request.get_response(main.app)
+        response = r_post('/holiday',
+                          {'date': '2017-01-01', 'name': 'New Year'})
         self.assertEqual(response.status_int, 200)
         newYear = json.loads(response.body)
-        request = webapp2.Request.blank('/holiday/' + str(newYear['rd']['id']),
-                                        headers=HEADERS)
-        request.method = 'DELETE'
-        response = request.get_response(main.app)
+        response = r_delete('/holiday/' + str(newYear['rd']['id']))
         self.assertEqual(response.status_int, 204)
-        response = request.get_response(main.app)
+        response = r_delete('/holiday/' + str(newYear['rd']['id']))
         self.assertEqual(response.status_int, 404)
 
     def test_patch_err(self):
-        request = webapp2.Request.blank('/holiday',
-                                        headers=HEADERS)
-        request.method = 'PATCH'
-        request.body = json.dumps({'date': '2', 'name': 'b'})
-        response = request.get_response(main.app)
-
+        response = r_patch('/holiday', {'date': '2', 'name': 'b'})
         self.assertEqual(response.status_int, 405)
 
     def test_patch_ok(self):
-        request = webapp2.Request.blank('/holiday/1',
-                                        headers=HEADERS)
-        request.method = 'PATCH'
-        request.body = json.dumps({'date': '2-1', 'name': 'b'})
-        response = request.get_response(main.app)
+        response = r_patch('/holiday/1', {'date': '2-1', 'name': 'b'})
 
         # verify modification
         self.assertEqual(response.status_int, 200)
 
-        request = webapp2.Request.blank('/holiday?year=2')
-        response = request.get_response(main.app)
-
+        response = r_get('/holiday?year=2')
         self.assertEqual(response.status_int, 200)
         holidays = json.loads(response.body)
         self.assertIn('rdl', holidays)
@@ -157,29 +161,24 @@ class HolidayTest(unittest.TestCase):
 class ReportTest(unittest.TestCase):
 
     def test_list_add(self):
-        request = webapp2.Request.blank('/user/1/report')
-        response = request.get_response(main.app)
-
+        response = r_get('/user/1/report')
         self.assertEqual(response.status_int, 200)
         report1 = json.loads(response.body)
+
         # try adding
-        request = webapp2.Request.blank('/user/1/report', headers=HEADERS)
-        request.method = 'POST'
-        request.body = json.dumps({'year': 2017, 'week': 2, 'overtime': 2})
-        response = request.get_response(main.app)
+        response = r_post('/user/1/report', {'year': 2017, 'week': 2,
+                                             'overtime': 2})
         self.assertEqual(response.status_int, 200)
 
         # add second time, too
-        request.body = json.dumps({'year': 2017, 'week': 3, 'overtime': 3})
-        response = request.get_response(main.app)
+        response = r_post('/user/1/report',
+                          {'year': 2017, 'week': 3, 'overtime': 3})
+        self.assertEqual(response.status_int, 200)
 
         # test listing
-        request = webapp2.Request.blank('/user/1/report')
-        response = request.get_response(main.app)
-
+        response = r_get('/user/1/report')
         self.assertEqual(response.status_int, 200)
         report2 = json.loads(response.body)
-
         self.assertEqual(len(report1['report'])+2, len(report2['report']))
 
 

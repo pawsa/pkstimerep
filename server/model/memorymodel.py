@@ -3,6 +3,7 @@
 """Provides User and Holiday classes with the required methods."""
 
 import collections
+import datetime
 import isoweek
 import re
 
@@ -13,10 +14,30 @@ class Day:
         self.days = collections.defaultdict(list)
 
     def getList(self, userid, start, end):
+        """Lists days for given user, withing given date interval.
+        @type userid: str
+        @param userid: id of the user for which to list the data.
+        @type start: datetime.date
+        @param start: starting day (inclusive)
+        @type end: datetime.date
+        @param end: ending day (inclusive)
+        """
+        assert type(start) == datetime.date
+        assert type(end) == datetime.date
         return [d for d in self.days[userid] if start <= d['date'] <= end]
 
     def update(self, userid, day, dayData):
-        userDays = self.days[userid].get(userid, [])
+        """Upserts given day data for the given user.
+        @type userid: str
+        @param userid: id of the user for which to list the data.
+        @type day: datetime.date
+        @param day: the day for which update the day
+        @type dayData: dict
+        @param dayData: the data to be inserted for given day,
+        replacing any former daya
+        """
+        assert type(day) == datetime.date
+        userDays = self.days[userid]
         for d in userDays:
             if d['date'] == day:
                 d.update(dayData)
@@ -35,7 +56,10 @@ class Day:
 class User:
     """provides getList, add, update methods"""
     def __init__(self):
-        self.users = dict()
+        self.users = {'admin@example.com': {
+            'email': 'admin@example.com', 'password': 'admin',
+            'status': 'active'}
+        }
 
     def getList(self):
         return self.users.values()
