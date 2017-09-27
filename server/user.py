@@ -16,6 +16,10 @@ class DateEncoder(json.JSONEncoder):
             return str(obj)
         return json.JSONEncoder.default(self, obj)
 
+"""Working day index numbers [0, 5)"""
+
+WORKDAYS = range(0, 5)
+
 
 class Day(webapp2.RequestHandler):
 
@@ -41,14 +45,28 @@ class Day(webapp2.RequestHandler):
             start = dt - datetime.timedelta(days=dt.weekday())
             end = start + datetime.timedelta(days=6)
         days = model.day.getList(userid, start, end)
-        if not days:  # nothing logged yet. FIXME add an unit test for this
-            while start <= end:
-                days.append({'date': start, 'arrival': '8:00',
-                             'break': 15, 'departure': '16:15',
-                             'extra': 0})
-                start += datetime.timedelta(days=1)
+        # create frontend-friendly array
+        retlist = []
+        while start <= end:
+            if len(days) and days[0]['date'] < start:
+                days.pop(0)
+                next
+            if len(days) and days[0]['date'] == start:
+                retlist.append(days.pop(0))
+            else:
+                # Append default values
+                if start.weekday() in WORKDAYS:
+                    retlist.append({'date': start, 'arrival': '8:00',
+                                    'break': 15, 'departure': '16:15',
+                                    'extra': 0, 'type': 'work'})
+                else:
+                    retlist.append({'date': start, 'arrival': '',
+                                    'break': None, 'departure': '',
+                                    'extra': None})
+
+            start += datetime.timedelta(days=1)
         self.response.content_type = 'application/json'
-        self.response.write(json.dumps({'dl': days}, cls=DateEncoder))
+        self.response.write(json.dumps({'dl': retlist}, cls=DateEncoder))
 
     def post(self, userid):
         """Sets day properties: 'start', 'end', 'pause', 'type' or comment"""

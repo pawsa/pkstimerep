@@ -2,9 +2,9 @@
 <p class="lead">Enter your weekly report here. When done with the week report, lock it.</p>
 <div class="table-responsive" ng-if="$ctrl.days">
   <table class="table table-striped">
-    <thead>
+    <thead ng-if="$ctrl.days">
       <tr>
-	<th>Date</th><th>Arrival</th><th>Break</th><th>Departure</th><th>Extra</th>
+	<th>Date</th><th>Arrival</th><th>Break [m]</th><th>Departure</th><th>Extra [m]</th>
 	<th>Type</th><th>.</th>
       </tr>
     </thead>
@@ -15,7 +15,7 @@
 	<td><input size=3 ng-model='d.break' placeholder='Break'></input></td>
 	<td><input size=6 ng-model='d.departure' placeholder='Departure'></input></td>
 	<td><input size=3 ng-model='d.extra' placeholder='Extra (m)'></input></td>
-	<td><day-type-selector></day-type-selector>
+	<td><day-type-selector type="d.type"></day-type-selector>
 	<td><button ng-click="$ctrl.update(d)" class="btn btn-default">Update</button>
       </tr>
     </tbody>

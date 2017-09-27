@@ -47,6 +47,7 @@ class DayTest(unittest.TestCase):
             print "SEtup warn", e
 
     def test_get_patch(self):
+        """Verify that data can be set and read back"""
         response = r_get('/user/a/day')
         self.assertEqual(response.status_int, 200)
         days = json.loads(response.body)
@@ -65,11 +66,35 @@ class DayTest(unittest.TestCase):
         days = json.loads(response.body)
         self.assertEqual(days['dl'][0]['break'], 15)
 
-        # test that updating former week fails
+        # FIXME: test that updating former week fails
         response = r_get('/user/a/day')
         self.assertEqual(response.status_int, 200)
 
-        # test that updating future week fails
+        # FIXME: test that updating future week fails
+
+    def test_delete_get_range(self):
+        """Tests default data, and modified data ranges"""
+        response = r_get('/user/a/day')
+        self.assertEqual(response.status_int, 200)
+        days = json.loads(response.body)
+        self.assertIn('dl', days)
+        for day in days['dl']:
+            response = r_delete('user/a/day/'+day['date'])
+            self.assertIn(response.status_int, (200, 404))
+        # check that something is read back
+        response = r_get('/user/a/day')
+        self.assertEqual(response.status_int, 200)
+        # check modification
+        monday = days['dl'][0]
+        monday['break'] = 15
+        # test updating current week
+        respose = r_post('/user/a/day', monday)
+        self.assertEqual(response.status_int, 200)
+        # check that you still read the entire week.
+        response3 = r_get('/user/a/day')
+        self.assertEqual(response3.status_int, 200)
+        days3 = json.loads(response3.body)
+        self.assertEqual(len(days['dl']), len(days3['dl']))
 
 
 class UserTest(unittest.TestCase):

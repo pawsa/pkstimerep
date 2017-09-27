@@ -24,7 +24,6 @@ app.factory('Session', ['$window', function ($window) {
 	var split = stateEncoded.split(',');
 	try {
 	    for (var i=0; i<split.length; ++i) { split[i] = atob(split[i]); }
-	    console.log('decoded', split);
 	    email = split[0];
 	    token= split[1];
 	} catch(e) { console.log('Broken local storage token', stateEncoded, e); }
@@ -105,10 +104,12 @@ function DayTypeController () {
     ctrl.types = ['work', 'flex', 'vacation', 'sick' ];
 };
 
-var DayTypeTemplate = "<select>" +
-    "<option ng-repeat='t in $ctrl.types'>{{ t }}</option>";
+var DayTypeTemplate = "<select ng-model='$ctrl.type' ng-options='t for t in $ctrl.types'></select>";
 
 angular.module('PtsUser').component('dayTypeSelector', {
     template: DayTypeTemplate,
     controller: DayTypeController,
+    bindings: {
+	type: '='
+    }
 });
