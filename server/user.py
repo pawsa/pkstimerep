@@ -56,13 +56,16 @@ class Day(webapp2.RequestHandler):
         """
         start = self.request.get('start')
         end = self.request.get('end')
+        flex = None
         if (start and end):
             start = datetime.datetime.strptime(start, '%Y-%m-%d').date()
             end = datetime.datetime.strptime(end, '%Y-%m-%d').date()
         else:
             reports = model.report.getList(userid, 0, 1)
             if len(reports) > 0:
-                nextWeek = isoweek(reports[0].year, reports[0].week+1)
+                flex = reports[0]['flex']
+                nextWeek = isoweek.Week(reports[0]['year'],
+                                        reports[0]['week'])+1
                 start = nextWeek.monday()
                 end = nextWeek.sunday()
         if not (start and end):
@@ -91,17 +94,19 @@ class Day(webapp2.RequestHandler):
 
             start += datetime.timedelta(days=1)
         self.response.content_type = 'application/json'
-        self.response.write(json.dumps({'dl': retlist}, cls=DateEncoder))
+        self.response.write(json.dumps({'dl': retlist, 'flex': flex},
+                                       cls=DateEncoder))
 
     def post(self, userid):
-        """Sets day properties: 'start', 'end', 'pause', 'type' or comment"""
+        """Sets day properties: 'arrival', 'departure', 'break', 'type' or
+        comment."""
         DAY_SCHEMA = {
             'date': {'type': 'date', 'required': True, 'coerce': str2date},
             'arrival': {'type': 'time', 'required': True},
             'break': {'type': 'integer'},
             'departure': {'type': 'time', 'required': True},
             'extra': {'type': 'integer'},
-            'type': {'type': 'string',
+            'type': {'type': 'string', 'required': True,
                      'allowed': ['work', 'flex', 'sick', 'vacation', 'off']}
         }
         validator = TimeValidator(DAY_SCHEMA)
@@ -180,9 +185,24 @@ class Report(webapp2.RequestHandler):
     """Handles week locking, unlocking, and getting overtime status"""
 
     def post(self, userid):
-        """Locks given week"""
-        data = json.loads(self.request.body)
-        model.report.add(userid, data)
+        """Locks given week. It is the backend that is responsible for
+        calculating the flex status etc."""
+        REPORT_SCHEMA = {
+            'start': {'type': 'date', 'required': True, 'coerce': str2date},
+            'end': {'type': 'date', 'required': True, 'coerce': str2date},
+        }
+        validator = TimeValidator(REPORT_SCHEMA)
+        daysToLock = validator.validated(json.loads(self.request.body))
+        if daysToLock is None:
+            jsonabort(400, validator.errors)
+        # basic consistency
+        isostart = daysToLock['start'].isocalendar()
+        isoend = daysToLock['end'].isocalendar()
+        if not (isostart[0] == isoend[0] and isostart[1] == isoend[1] and
+                isostart[2] == 1 and isoend[2] == 7):
+            jsonabort(400, 'Range must cover exactly a Mon-Sun week')
+        # all good, modify the db.
+        model.report.add(userid, isostart[0], isostart[1])
         self.response.write(json.dumps({'status': 'OK'}))
 
     def delete(self, yyyyWw):
@@ -194,3 +214,15 @@ class Report(webapp2.RequestHandler):
         """Returns overtime status and last locked week data"""
         reports = model.report.getList(userid, 0)
         self.response.write(json.dumps({'report': reports}))
+
+    def handle_exception(self, exception, debug):
+        # Set a custom message.
+
+        # If the exception is a HTTPException, use its error code.
+        # Otherwise use a generic 500 error code.
+        if isinstance(exception, model.ConsistencyError):
+            self.response.set_status(400)
+            self.response.write(
+                'Consistency error: {}'.format(exception.message))
+        else:
+            super(Report, self).handle_exception(exception, debug)

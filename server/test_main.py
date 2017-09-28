@@ -41,7 +41,7 @@ class DayTest(unittest.TestCase):
     """Day operations; listing, adding and editing"""
 
     def setUp(self):
-        model.setDevModel()
+        model.setModel('mem')
         try:
             model.user.add({'email': 'a', 'password': 'b'})
         except Exception as e:
@@ -102,7 +102,7 @@ class UserTest(unittest.TestCase):
     """User operations: listing and adding"""
 
     def setUp(self):
-        model.setDevModel()
+        model.setModel('mem')
 
     def test_get_list(self):
         response = r_get('/user')
@@ -139,7 +139,7 @@ class HolidayTest(unittest.TestCase):
     """Holiday operations: listing, adding, updating, deleting."""
 
     def setUp(self):
-        model.setDevModel()
+        model.setModel('mem')
 
     def test_get_list(self):
         response = r_get('/holiday')
@@ -198,13 +198,22 @@ class ReportTest(unittest.TestCase):
         report1 = json.loads(response.body)
 
         # try adding
-        response = r_post('/user/1/report', {'year': 2017, 'week': 2,
-                                             'overtime': 2})
+        response = r_post('/user/1/report',
+                          {'start': '2017-09-25', 'end': '2017-10-01'})
         self.assertEqual(response.status_int, 200)
 
-        # add second time, too
+        # add second time, too, should fail
         response = r_post('/user/1/report',
-                          {'year': 2017, 'week': 3, 'overtime': 3})
+                          {'start': '2017-09-25', 'end': '2017-10-01'})
+        self.assertEqual(response.status_int, 400)
+
+        # add next week with some data, should succeed
+        response = r_post('/user/a/day',
+                          {'date': '2017-10-02', 'type': 'work',
+                           'arrival': '2:0', 'departure': '3:0'})
+        self.assertEqual(response.status_int, 200)
+        response = r_post('/user/1/report',
+                          {'start': '2017-10-02', 'end': '2017-10-08'})
         self.assertEqual(response.status_int, 200)
 
         # test listing
@@ -212,6 +221,11 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(response.status_int, 200)
         report2 = json.loads(response.body)
         self.assertEqual(len(report1['report'])+2, len(report2['report']))
+
+        # test listing week when a report is present!
+        response = r_get('/user/1/day')
+        self.assertEqual(response.status_int, 200)
+        report = json.loads(response.body)
 
 
 if __name__ == '__main__':

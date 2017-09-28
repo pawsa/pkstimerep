@@ -1,0 +1,17 @@
+<h1 class="page-header">Weekly status</h1>
+<div class="table-responsive" ng-if="$ctrl.reports">
+  <table class="table table-striped">
+    <thead ng-if="$ctrl.reports">
+      <tr>
+	<th>Year</th><th>Week</th><th>Flex at start</th><th>Vacation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr ng-repeat="r in $ctrl.reports">
+	<td>{{ r.year }}</td><td>{{ r.week }}</td>
+	<td>{{ r.flex }}</td><td>{{ r.vacation }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+<div ng-if="!$ctrl.reports">Reading...</div>

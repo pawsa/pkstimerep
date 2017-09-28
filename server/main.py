@@ -3,6 +3,7 @@
 """Main PKS timesheet handler.  It simply registers the handlers. It
 provides also a development interface with a test backend."""
 
+import sys
 import webapp2
 
 import holiday
@@ -28,17 +29,17 @@ app = webapp2.WSGIApplication([
 ], debug=True)
 
 
-def devserver():
+def devserver(storageModel):
     """Starts a development server with a development, sqllite based
     model.  Otherwise, gcloud compatible storage will be used."""
     from paste import httpserver
     from paste.urlparser import StaticURLParser
     from paste.cascade import Cascade
     import model
-    model.setDevModel()
+    model.setModel(storageModel)
     static_server = StaticURLParser('client')
     testapp = Cascade([static_server, app])
     httpserver.serve(testapp, host='127.0.0.1', port='8080')
 
 if __name__ == '__main__':
-    devserver()
+    devserver(sys.argv[1] if len(sys.argv) > 1 else 'mem')

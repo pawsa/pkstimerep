@@ -6,14 +6,24 @@ app.config(['$routeProvider', function ($routeProvider) {
         .when('/', {
             template: '<week-view></week-view>',
         })
-        .when('/status', {
-            template: 'FIXME status <user-status></user-status>',
+        .when('/weeks', {
+            template: '<weekly-reports></weekly-reports>',
+        })
+        .when('/monthly', {
+            template: '<monthly-report></monthly-report>',
         })
         .when('/profile', {
             template: 'FIXME profile <user-profile></user-profile>',
         })
         .otherwise({ redirectTo: '/' });
 }]);
+
+/** Provides a filter to convert minutes to hours, with 2 decimal points. */
+app.filter('minutesToHours', function() {
+  return function(input) {
+      return parseFloat(Math.round(input * 100/60) / 100).toFixed(2);
+  };
+});
 
 app.factory('Session', ['$window', function ($window) {
     var email = '';
@@ -69,7 +79,8 @@ app.controller('AuthController', function ($http, Session) {
 
 });
 
-/** Week view component */
+/** Week-view component is defined by its controller and its
+ * template. */
 
 function WeekViewController($http, Session) {
     var ctrl = this;
@@ -106,17 +117,19 @@ function WeekViewController($http, Session) {
 	for(var i=0; i<days.length; ++i) {
 	    retval += minutesFlexDiff(days[i]);
 	}
-	return parseFloat(Math.round(retval * 100/60) / 100).toFixed(2);
+	return retval;
     };
 
-    $http.get('user/' + Session.getEmail() + '/day')
-	.then(function (response) {
-	    ctrl.initialFlex = response.data.flex;
-	    ctrl.days = response.data.dl;
-	    ctrl.flexhours = computeFlex(ctrl.initialFlex, ctrl.days);
-	}).catch(function (err) {
-	    console.log('got error', err);
-	});
+    function init() {
+	$http.get('user/' + Session.getEmail() + '/day')
+	    .then(function (response) {
+		ctrl.initialFlex = response.data.flex || 0;
+		ctrl.days = response.data.dl;
+		ctrl.flexhours = computeFlex(ctrl.initialFlex, ctrl.days);
+	    }).catch(function (err) {
+		console.log('got error', err);
+	    });
+    }
 
     ctrl.update = function (day) {
 	$http.post('user/' + Session.getEmail() + '/day', day)
@@ -127,6 +140,19 @@ function WeekViewController($http, Session) {
 		console.log('Update got error', err);
 	    });
     };
+
+    ctrl.lock = function () {
+	var range = {start: ctrl.days[0]['date'],
+		     end: ctrl.days[ctrl.days.length-1]['date']};
+	$http.post('user/' + Session.getEmail() + '/report', range)
+	    .then(function (response) {
+		init(); /* load data of next week! */
+	    }).catch(function (err) {
+		console.log('Update got error', err);
+	    });
+    };
+
+    init();
 };
 
 angular.module('PtsUser').component('weekView', {
@@ -136,7 +162,29 @@ angular.module('PtsUser').component('weekView', {
     }
 });
 
-/* Day type selector */
+
+/** Weekly report, used mostly to get overview over vacation and
+ * overtime status. */
+function WeeklyReportsController($http, Session) {
+    var ctrl = this;
+    ctrl.days = [];
+    $http.get('user/' + Session.getEmail() + '/report')
+	.then(function (response) {
+	    ctrl.reports = response.data.report;
+	}).catch( function (err) {
+	    console.log('got error', err);
+	});
+};
+
+angular.module('PtsUser').component('weeklyReports', {
+    templateUrl: 'weeklyReport.html',
+    controller: WeeklyReportsController,
+    bindings: {
+    }
+});
+
+
+/* Simple day type selector */
 function DayTypeController () {
     var ctrl = this;
     ctrl.types = ['work', 'flex', 'vacation', 'sick', 'off' ];

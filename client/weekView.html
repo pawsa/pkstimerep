@@ -20,7 +20,8 @@
       </tr>
     </tbody>
   </table>
-  <div>Flex status: {{ $ctrl.flexhours }} h</div>
+  <div>Flex status transferred: {{ $ctrl.initialFlex | minutesToHours }} h;
+    current: {{ $ctrl.flexhours | minutesToHours }} h</div>
 </div>
 <div ng-if="!$ctrl.days">Reading...</div>
 <div ng-enable="$ctrl.days">

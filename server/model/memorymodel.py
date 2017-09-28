@@ -7,6 +7,14 @@ import datetime
 import isoweek
 import re
 
+import model  # so thar reports can access days and exceptions...
+
+
+def timeToMin(aTime):
+    """Converts expression HH:MM to minutes since day start."""
+    tm = datetime.datetime.strptime(aTime, '%H:%M')
+    return tm.hour*60 + tm.minute
+
 
 class Day:
     """provides getList, add, update methods"""
@@ -132,10 +140,42 @@ class WeeklyReport:
         end = len(keys) if count is None else start+count
         return [userReport[k] for k in keys[start:end]]
 
-    def add(self, userid, data):
-        """@note: No order or data consistency checks are done here."""
-        key = isoweek.Week(data['year'], data['week']).isoformat()
+    def add(self, userid, isoYear, isoWeek):
+        """@note: This is the place to execute the consistency checks to the
+        best of the capabilites provided by the storage."""
+        week = isoweek.Week(isoYear, isoWeek)
+        # compute delta.
+        start = week.monday()
+        end = week.sunday()
+        days = model.day.getList(userid, start, end)
+        vacation = 0
+        flex = 0
+        WORKDAY_MINUTES = 60*8
+        # aggregate week data, consider sharing it with other models
+        for day in days:
+            flex += day['extra']
+            if day['type'] == 'vacation':
+                vacation += 1
+            # mirror frontend algorithm
+            if day['type'] == 'work':
+                flex += (timeToMin(day['departure']) -
+                         timeToMin(day['arrival']) -
+                         day['break'] - WORKDAY_MINUTES)
+        # accumulate with former week, if any.
+        userReport = self.reports[userid]
+        if len(userReport) > 0:
+            lastReport = userReport[sorted(userReport.keys())[-1]]
+            prevWeek = week-1
+            if not (lastReport['week'] == prevWeek.week and
+                    lastReport['year'] == prevWeek.year):
+                raise model.ConsistencyError('locked weeks must be continouos')
+            vacation += lastReport['vacation']
+            flex += lastReport['flex']
+        key = week.isoformat()
+        data = {'year': week.year, 'week': week.week,
+                'vacation': vacation, 'flex': flex}
         self.reports[userid][key] = data
+        return data
 
     def delete(self, userid, year, week):
         key = isoweek.Week(year, week).isoformat()
