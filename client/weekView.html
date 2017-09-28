@@ -4,22 +4,23 @@
   <table class="table table-striped">
     <thead ng-if="$ctrl.days">
       <tr>
-	<th>Date</th><th>Arrival</th><th>Break [m]</th><th>Departure</th><th>Extra [m]</th>
+	<th>Date</th><th>Arrival</th><th>Break (m)</th><th>Departure</th><th>Extra (m)</th>
 	<th>Type</th><th>.</th>
       </tr>
     </thead>
     <tbody>
       <tr ng-repeat="d in $ctrl.days">
 	<td>{{ d.date }}</td>
-	<td><input size=6 ng-model='d.arrival' placeholder='Arrival'></input></td>
-	<td><input size=3 ng-model='d.break' placeholder='Break'></input></td>
-	<td><input size=6 ng-model='d.departure' placeholder='Departure'></input></td>
-	<td><input size=3 ng-model='d.extra' placeholder='Extra (m)'></input></td>
+	<td><input class="pkstime" ng-model='d.arrival' placeholder='Arrival'></input></td>
+	<td><input class="pksmin" ng-model='d.break' placeholder='Break (m)' type='number'></input></td>
+	<td><input class="pkstime" ng-model='d.departure' placeholder='Departure'></input></td>
+	<td><input class="pksmin" ng-model='d.extra' placeholder='Extra (m)' type='number'></input></td>
 	<td><day-type-selector type="d.type"></day-type-selector>
 	<td><button ng-click="$ctrl.update(d)" class="btn btn-default">Update</button>
       </tr>
     </tbody>
   </table>
+  <div>Flex status: {{ $ctrl.flexhours }} h</div>
 </div>
 <div ng-if="!$ctrl.days">Reading...</div>
 <div ng-enable="$ctrl.days">

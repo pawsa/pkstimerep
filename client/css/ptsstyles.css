@@ -35,3 +35,23 @@
   border-top-left-radius: 0;
   border-top-right-radius: 0;
 }
+
+/* Number entry formatting */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+input[type="number"] {
+    -moz-appearance: textfield;
+}
+
+/* time input fields. */
+input.pkstime {
+    width: 60px;
+}
+
+/* minute input fields. */
+input.pksmin {
+    width: 50px;
+}

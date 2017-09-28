@@ -2,12 +2,37 @@
 
 """User data interface implemented by by User class."""
 
+import cerberus
 import datetime
 import isoweek
 import json
+import re
 import webapp2
 
 import model
+
+
+def jsonabort(code, jsonDict):
+    """Aborts processing, returning given data
+    @param code: HTTP status code to be returned.
+    @param jsonDict: dict to be returned as JSON
+    """
+    body = {'code': code, 'detail': jsonDict}
+    webapp2.abort(code, body=body)
+
+
+def str2date(value):
+    if isinstance(value, (str, unicode)):
+        return datetime.datetime.strptime(value, '%Y-%m-%d').date()
+    else:
+        return value
+
+
+class TimeValidator(cerberus.Validator):
+    """Validator with additional 'time' field type"""
+    def _validate_type_time(self, value):
+        if re.match('\d\d?:\d\d?', value):
+            return True
 
 
 class DateEncoder(json.JSONEncoder):
@@ -62,7 +87,7 @@ class Day(webapp2.RequestHandler):
                 else:
                     retlist.append({'date': start, 'arrival': '',
                                     'break': None, 'departure': '',
-                                    'extra': None})
+                                    'extra': None, 'type': 'off'})
 
             start += datetime.timedelta(days=1)
         self.response.content_type = 'application/json'
@@ -70,10 +95,22 @@ class Day(webapp2.RequestHandler):
 
     def post(self, userid):
         """Sets day properties: 'start', 'end', 'pause', 'type' or comment"""
-        dayData = json.loads(self.request.body)
-        date = datetime.datetime.strptime(dayData['date'], '%Y-%m-%d').date()
+        DAY_SCHEMA = {
+            'date': {'type': 'date', 'required': True, 'coerce': str2date},
+            'arrival': {'type': 'time', 'required': True},
+            'break': {'type': 'integer'},
+            'departure': {'type': 'time', 'required': True},
+            'extra': {'type': 'integer'},
+            'type': {'type': 'string',
+                     'allowed': ['work', 'flex', 'sick', 'vacation', 'off']}
+        }
+        validator = TimeValidator(DAY_SCHEMA)
+        dayData = validator.validated(json.loads(self.request.body))
+        if dayData is None:
+            jsonabort(400, validator.errors)
         self.response.content_type = 'application/json'
-        self.response.write(json.dumps({'d': model.day.update(userid, date,
+        self.response.write(json.dumps({'d': model.day.update(userid,
+                                                              dayData['date'],
                                                               dayData)},
                                        cls=DateEncoder))
 
@@ -122,7 +159,12 @@ class User(webapp2.RequestHandler):
 
     def post(self):
         """Authenticates the user"""
-        credentials = json.loads(self.request.body)
+        AUTH_SCHEMA = {'email': {'type': 'string', 'required': True},
+                       'password': {'type': 'string', 'required': True}}
+        validator = cerberus.Validator(AUTH_SCHEMA)
+        credentials = validator.validated(json.loads(self.request.body))
+        if credentials is None:
+            jsonabort(400, validator.errors)
         if model.user.auth(credentials['email'], credentials['password']):
             self.response.status = 200
             self.response.write(json.dumps({'token': 'magictoken'}))

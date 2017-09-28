@@ -7,10 +7,10 @@ app.config(['$routeProvider', function ($routeProvider) {
             template: '<week-view></week-view>',
         })
         .when('/status', {
-            template: '<user-status></user-status>',
+            template: 'FIXME status <user-status></user-status>',
         })
         .when('/profile', {
-            template: '<user-profile></user-profile>',
+            template: 'FIXME profile <user-profile></user-profile>',
         })
         .otherwise({ redirectTo: '/' });
 }]);
@@ -58,7 +58,7 @@ app.controller('AuthController', function ($http, Session) {
 		}
 	    }).catch (function (err) {
 		console.log('auth failed', err);
-		ctrl.authmessage = 'Access denied';
+		ctrl.authmessage = err.xhrStatus == 'complete' ? 'Access denied' : 'Network error';
 	    });
     };
 
@@ -74,20 +74,58 @@ app.controller('AuthController', function ($http, Session) {
 function WeekViewController($http, Session) {
     var ctrl = this;
     ctrl.days = [];
+
+    function timeToMin(timeString) {
+	return (new Date('1970-01-01T'+timeString + 'Z')).getTime()/60000;
+    }
+
+    function minutesFlexDiff(day) {
+	var retval = day['extra'];
+	var WORKDAY_MINUTES = 60*8;
+	switch (day['type']) {
+	case 'work':
+	    retval += (timeToMin(day['departure']) - timeToMin(day['arrival'])
+		       - day['break'] - WORKDAY_MINUTES);
+	    break;
+	case 'flex':
+	case 'sick':
+	case 'vacation':
+	case 'off':
+	};
+	return retval || 0;
+    }
+
+    /** Helper function computing current flex status.
+	FIXME maybe this calculation should be done in backend only?
+	@param initial: The flex status before the week start
+	@param days: days array.
+	@returns: Flex in hours, rounded to 2 decimal places
+    */
+    function computeFlex(initial, days) {
+	var retval = initial || 0;
+	for(var i=0; i<days.length; ++i) {
+	    retval += minutesFlexDiff(days[i]);
+	}
+	return parseFloat(Math.round(retval * 100/60) / 100).toFixed(2);
+    };
+
     $http.get('user/' + Session.getEmail() + '/day')
 	.then(function (response) {
+	    ctrl.initialFlex = response.data.flex;
 	    ctrl.days = response.data.dl;
+	    ctrl.flexhours = computeFlex(ctrl.initialFlex, ctrl.days);
 	}).catch(function (err) {
 	    console.log('got error', err);
 	});
 
     ctrl.update = function (day) {
 	$http.post('user/' + Session.getEmail() + '/day', day)
-	.then(function (response) {
-	    console.log('Patch succeeded', response);
-	}).catch(function (err) {
-	    console.log('Update got error', err);
-	});
+	    .then(function (response) {
+		ctrl.flexhours = computeFlex(ctrl.initialFlex, ctrl.days);
+		console.log('Patch succeeded', response);
+	    }).catch(function (err) {
+		console.log('Update got error', err);
+	    });
     };
 };
 
@@ -101,7 +139,7 @@ angular.module('PtsUser').component('weekView', {
 /* Day type selector */
 function DayTypeController () {
     var ctrl = this;
-    ctrl.types = ['work', 'flex', 'vacation', 'sick' ];
+    ctrl.types = ['work', 'flex', 'vacation', 'sick', 'off' ];
 };
 
 var DayTypeTemplate = "<select ng-model='$ctrl.type' ng-options='t for t in $ctrl.types'></select>";

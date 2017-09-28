@@ -40,7 +40,7 @@ class Day:
         userDays = self.days[userid]
         for d in userDays:
             if d['date'] == day:
-                d.update(dayData)
+                d.update(dayData, date=day)
                 return d
         self.days[userid].append(dict(dayData, date=day))
         return self.days[userid][-1]

@@ -1,3 +1,4 @@
 #! /bin/sh
 
-exec python -m unittest discover -s -d server
+python -m unittest discover -s -d server || exit 1
+exec pep8 server

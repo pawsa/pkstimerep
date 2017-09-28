@@ -9,7 +9,8 @@ import webapp2
 import main
 import model
 
-HEADERS = [('content-type', 'application/json')]
+HEADERS = [('accept', 'application/json'),
+           ('content-type', 'application/json')]
 
 
 def r_delete(path):
@@ -126,6 +127,12 @@ class UserTest(unittest.TestCase):
         # failed auth
         response = r_post('/user/auth', {'email': 'a', 'password': 'b'})
         self.assertEqual(response.status_int, 401)
+
+        # Bad auth request
+        response = r_post('/user/auth', {'email': 'a'})
+        self.assertEqual(response.status_int, 400)
+        self.assertEqual(type(response.body), dict)
+        self.assertIn('detail', response.body)
 
 
 class HolidayTest(unittest.TestCase):

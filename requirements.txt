@@ -1,3 +1,4 @@
+cerberus
 isoweek
 paste
 webapp2
