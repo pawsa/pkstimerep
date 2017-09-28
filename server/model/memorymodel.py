@@ -7,7 +7,7 @@ import datetime
 import isoweek
 import re
 
-import model  # so thar reports can access days and exceptions...
+from . import ConsistencyError
 
 
 def timeToMin(aTime):
@@ -129,7 +129,8 @@ class WeeklyReport:
     """provides a list of weekly reports for the user. Weekly report is
     essentially just an overtime status measured in minutes."""
 
-    def __init__(self):
+    def __init__(self, dayInstance):
+        self.dayInstance = dayInstance
         self.reports = collections.defaultdict(dict)
 
     def getList(self, userid, start, count=None):
@@ -147,7 +148,7 @@ class WeeklyReport:
         # compute delta.
         start = week.monday()
         end = week.sunday()
-        days = model.day.getList(userid, start, end)
+        days = self.dayInstance.getList(userid, start, end)
         vacation = 0
         flex = 0
         WORKDAY_MINUTES = 60*8
@@ -168,7 +169,7 @@ class WeeklyReport:
             prevWeek = week-1
             if not (lastReport['week'] == prevWeek.week and
                     lastReport['year'] == prevWeek.year):
-                raise model.ConsistencyError('locked weeks must be continouos')
+                raise ConsistencyError('locked weeks must be continouos')
             vacation += lastReport['vacation']
             flex += lastReport['flex']
         key = week.isoformat()

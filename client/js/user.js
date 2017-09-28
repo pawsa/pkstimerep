@@ -43,6 +43,8 @@ app.factory('Session', ['$window', function ($window) {
 	getToken: function () { return token; },
 	setCredentials: function (email, token) {
 	    var encoded = btoa(email) + ',' + btoa(token);
+	    email = email;
+	    token = token;
 	    $window.localStorage.setItem('ptssession',  encoded);
 	},
 	clearCredentials: function () {

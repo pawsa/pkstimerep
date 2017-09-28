@@ -2,12 +2,19 @@ runtime: python27
 threadsafe: true
 
 handlers:
-- url: /(user|calendar)
+- url: /(user|holiday).*
   script: server.main.app
 
 - url: /
   static_files: client/index.html
   upload: client/index.html
 
+- url: /([^/*]+\.html)$
+  static_files: client/\1
+  upload: client/[^/*]+\.html
+
 - url: /js
   static_dir: client/js
+
+- url: /css
+  static_dir: client/css

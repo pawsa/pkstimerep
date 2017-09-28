@@ -9,6 +9,9 @@ import webapp2
 import holiday
 import user
 
+import model  # fixme: switch to 'datastorage'
+model.setModel('mem')  # fixme: switch to 'datastorage'
+
 #
 # support PATCH methods, as long as
 # https://code.google.com/archive/p/webapp-improved/issues/69 is not merged

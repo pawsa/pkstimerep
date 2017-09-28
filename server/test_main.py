@@ -192,6 +192,9 @@ class HolidayTest(unittest.TestCase):
 
 class ReportTest(unittest.TestCase):
 
+    def setUp(self):
+        model.setModel('mem')
+
     def test_list_add(self):
         response = r_get('/user/1/report')
         self.assertEqual(response.status_int, 200)

@@ -20,7 +20,7 @@ def setModelMem():
     global day, holiday, report, user
     day = memorymodel.Day()
     holiday = memorymodel.Holiday()
-    report = memorymodel.WeeklyReport()
+    report = memorymodel.WeeklyReport(day)
     user = memorymodel.User()
 
 
@@ -33,7 +33,7 @@ def setModelDatastore():
     global day, holiday, report, user
     day = datastoremodel.Day()
     holiday = datastoremodel.Holiday()
-    report = datastoremodel.WeeklyReport()
+    report = datastoremodel.WeeklyReport(day)
     user = datastoremodel.User()
 
 
