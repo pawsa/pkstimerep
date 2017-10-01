@@ -112,4 +112,7 @@ dev_appserver.py app.yaml
 
 To deploy on the actual google cloud, run
 
-gcloud appengine deploy app.yaml
+ gcloud appengine deploy app.yaml
+
+On first run and on every index change, you will need to run also:
+ gcloud datastore create-indexes index.yaml
