@@ -1,19 +1,17 @@
 #! /usr/bin/env python
 
-"""Provides User and Holiday classes with the required methods."""
+"""Provides Day, User, Holiday, and WeeklyReport classes with the required
+methods.
+"""
+
+from passlib.hash import pbkdf2_sha256
 
 import collections
 import datetime
 import isoweek
 import re
 
-from . import ConsistencyError
-
-
-def timeToMin(aTime):
-    """Converts expression HH:MM to minutes since day start."""
-    tm = datetime.datetime.strptime(aTime, '%H:%M')
-    return tm.hour*60 + tm.minute
+from . import ConsistencyError, getDelta
 
 
 class Day:
@@ -65,28 +63,38 @@ class User:
     """provides getList, add, update methods"""
     def __init__(self):
         self.users = {'admin@example.com': {
-            'email': 'admin@example.com', 'password': 'admin',
+            'email': 'admin@example.com',
+            'name': 'Admin',
+            'pwhashed': pbkdf2_sha256.hash('admin'),
             'status': 'active'}
         }
 
     def getList(self):
-        return self.users.values()
+        return [{'email': u['email'], 'name': u['name'], 'status': u['status']}
+                for u in self.users.values()]
 
     def add(self, data):
         if data['email'] in self.users:
             raise Exception("User already exists")
+        data['pwhashed'] = pbkdf2_sha256.hash(data.pop('password')
+                                              .encode('UTF-8'))
         self.users[data['email']] = data
         return data
 
     def update(self, userid, userData):
         if userid in self.users:
-            self.users[userid].update(userData)
-            return self.users[userid]
+            user = self.users[userid]
+            user.update(userData)
+            if 'password' in user:
+                user['pwhashed'] = pbkdf2_sha256.hash(user.pop('password')
+                                                      .encode('UTF-8'))
+            return user
         raise Exception('Nonexisting user')
 
     def auth(self, userid, password):
         user = self.users.get(userid)
-        return user and user['password'] == password
+        return user and pbkdf2_sha256.verify(password.encode('UTF-8'),
+                                             user['pwhashed'])
 
 
 class Holiday:
@@ -146,22 +154,7 @@ class WeeklyReport:
         best of the capabilites provided by the storage."""
         week = isoweek.Week(isoYear, isoWeek)
         # compute delta.
-        start = week.monday()
-        end = week.sunday()
-        days = self.dayInstance.getList(userid, start, end)
-        vacation = 0
-        flex = 0
-        WORKDAY_MINUTES = 60*8
-        # aggregate week data, consider sharing it with other models
-        for day in days:
-            flex += day['extra']
-            if day['type'] == 'vacation':
-                vacation += 1
-            # mirror frontend algorithm
-            if day['type'] == 'work':
-                flex += (timeToMin(day['departure']) -
-                         timeToMin(day['arrival']) -
-                         day['break'] - WORKDAY_MINUTES)
+        flex, vacation = getDelta(self.dayInstance, userid, week)
         # accumulate with former week, if any.
         userReport = self.reports[userid]
         if len(userReport) > 0:

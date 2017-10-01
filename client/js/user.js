@@ -41,11 +41,13 @@ app.factory('Session', ['$window', function ($window) {
     return {
 	getEmail: function () { return email; },
 	getToken: function () { return token; },
-	setCredentials: function (email, token) {
-	    var encoded = btoa(email) + ',' + btoa(token);
-	    email = email;
-	    token = token;
-	    $window.localStorage.setItem('ptssession',  encoded);
+	setCredentials: function (email_, token_, remember) {
+	    email = email_;
+	    token = token_;
+	    if (remember) {
+		var encoded = btoa(email_) + ',' + btoa(token_);
+		$window.localStorage.setItem('ptssession',  encoded);
+	    }
 	},
 	clearCredentials: function () {
 	    email = token = '';
@@ -63,11 +65,11 @@ app.controller('AuthController', function ($http, Session) {
     ctrl.login = function () {
 	$http.post('user/auth', {email: ctrl.email, password: ctrl.password}).then(
 	    function (response) {
+		Session.setCredentials(ctrl.email, response.data.token,
+				       ctrl.remember);
+		ctrl.authmessage = '';
 		ctrl.authenticated = true;
-		if (ctrl.remember) {
-		    Session.setCredentials(ctrl.email, response.data.token);
-		    ctrl.authmessage = '';
-		}
+		ctrl.email = ctrl.password = '';
 	    }).catch (function (err) {
 		console.log('auth failed', err);
 		ctrl.authmessage = err.xhrStatus == 'complete' ? 'Access denied' : 'Network error';
@@ -93,7 +95,7 @@ function WeekViewController($http, Session) {
     }
 
     function minutesFlexDiff(day) {
-	var retval = day['extra'];
+	var retval = day['extra'] || 0;
 	var WORKDAY_MINUTES = 60*8;
 	switch (day['type']) {
 	case 'work':
@@ -101,11 +103,12 @@ function WeekViewController($http, Session) {
 		       - day['break'] - WORKDAY_MINUTES);
 	    break;
 	case 'flex':
+	    retval -= WORKDAY_MINUTES;
 	case 'sick':
 	case 'vacation':
 	case 'off':
 	};
-	return retval || 0;
+	return retval;
     }
 
     /** Helper function computing current flex status.
@@ -158,7 +161,7 @@ function WeekViewController($http, Session) {
 };
 
 angular.module('PtsUser').component('weekView', {
-    templateUrl: 'weekView.html',
+    templateUrl: 'components/weekView.html',
     controller: WeekViewController,
     bindings: {
     }
@@ -179,7 +182,7 @@ function WeeklyReportsController($http, Session) {
 };
 
 angular.module('PtsUser').component('weeklyReports', {
-    templateUrl: 'weeklyReport.html',
+    templateUrl: 'components/weeklyReport.html',
     controller: WeeklyReportsController,
     bindings: {
     }

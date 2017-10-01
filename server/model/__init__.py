@@ -6,6 +6,8 @@ production storage actions.
 The model provide its user and holiday members.
 """
 
+import datetime
+
 
 class ConsistencyError(Exception):
     pass
@@ -38,12 +40,42 @@ def setModelDatastore():
 
 
 def setModel(modelName):
+    print "Setting model", modelName
     if modelName == 'mem':
         setModelMem()
     elif modelName == 'datastore':
         setModelDatastore()
     else:
         raise Exception('Unknown model name')
+
+
+def timeToMin(aTime):
+    """Converts expression HH:MM to minutes since day start."""
+    tm = datetime.datetime.strptime(aTime, '%H:%M')
+    return tm.hour*60 + tm.minute
+
+
+def getDelta(dayInstance, userid, week):
+    start = week.monday()
+    end = week.sunday()
+    days = dayInstance.getList(userid, start, end)
+    vacation = 0
+    flex = 0
+    WORKDAY_MINUTES = 60*8
+    # aggregate week data, consider sharing it with other models
+    for day in days:
+        flex += day['extra']
+        # mirror frontend algorithm
+        if day['type'] == 'vacation':
+            vacation += 1
+        elif day['type'] == 'work':
+            flex += (timeToMin(day['departure']) -
+                     timeToMin(day['arrival']) -
+                     day['break'] - WORKDAY_MINUTES)
+        elif day['type'] == 'flex':
+            flex -= WORKDAY_MINUTES
+    return flex, vacation
+
 
 day = None
 holiday = None

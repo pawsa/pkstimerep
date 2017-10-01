@@ -1,5 +1,6 @@
 cerberus
 isoweek
+passlib
 paste
 webapp2
 webob

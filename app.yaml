@@ -5,13 +5,16 @@ handlers:
 - url: /(user|holiday).*
   script: server.main.app
 
+- url: /(.*.html)$
+  static_files: client/\1
+  upload: client/[^/*]+\.html
+
 - url: /
   static_files: client/index.html
   upload: client/index.html
 
-- url: /([^/*]+\.html)$
-  static_files: client/\1
-  upload: client/[^/*]+\.html
+- url: /components
+  static_dir: client/components
 
 - url: /js
   static_dir: client/js

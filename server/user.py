@@ -18,7 +18,8 @@ def jsonabort(code, jsonDict):
     @param jsonDict: dict to be returned as JSON
     """
     body = {'code': code, 'detail': jsonDict}
-    webapp2.abort(code, body=body)
+    webapp2.abort(code, headers=[('content-type', 'application/json')],
+                  body=json.dumps(body))
 
 
 def str2date(value):
@@ -136,10 +137,20 @@ class UserCollection(webapp2.RequestHandler):
 
     def post(self):
         """Permits creating the actual user.
+        @note never pass clear text password beyond this point.
         FIXME add validation.
         FIXME add admin privileges decorator"""
         self.response.content_type = 'application/json'
-        user = json.loads(self.request.body)
+        USER_SCHEMA = {'email': {'type': 'string', 'required': True,
+                                 'empty': False},
+                       'name': {'type': 'string', 'required': True},
+                       'password': {'type': 'string', 'required': True,
+                                    'empty': False},
+                       'status': {'type': 'string', 'allowed': ['active']}}
+        validator = cerberus.Validator(USER_SCHEMA)
+        user = validator.validated(json.loads(self.request.body))
+        if user is None:
+            jsonabort(400, validator.errors)
         try:
             self.response.write(json.dumps({'u': model.user.add(user)}))
         except Exception as e:
@@ -163,9 +174,13 @@ class User(webapp2.RequestHandler):
             self.response.write(json.dumps({'error': 'Not found'}))
 
     def post(self):
-        """Authenticates the user"""
-        AUTH_SCHEMA = {'email': {'type': 'string', 'required': True},
-                       'password': {'type': 'string', 'required': True}}
+        """Authenticates the user. Note: the plain-text password must NEVER leave this
+        interface.
+        """
+        AUTH_SCHEMA = {'email': {'type': 'string', 'required': True,
+                                 'empty': False},
+                       'password': {'type': 'string', 'required': True,
+                                    'empty': False}}
         validator = cerberus.Validator(AUTH_SCHEMA)
         credentials = validator.validated(json.loads(self.request.body))
         if credentials is None:

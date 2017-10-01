@@ -3,15 +3,15 @@
 """Main PKS timesheet handler.  It simply registers the handlers. It
 provides also a development interface with a test backend."""
 
+import os
 import sys
 import webapp2
 
 import holiday
 import user
 
-import model  # fixme: switch to 'datastorage'
-model.setModel('mem')  # fixme: switch to 'datastorage'
-
+import model
+model.setModel(os.environ.get('PKSMEMORYMODEL', 'datastore'))
 #
 # support PATCH methods, as long as
 # https://code.google.com/archive/p/webapp-improved/issues/69 is not merged
@@ -38,8 +38,6 @@ def devserver(storageModel):
     from paste import httpserver
     from paste.urlparser import StaticURLParser
     from paste.cascade import Cascade
-    import model
-    model.setModel(storageModel)
     static_server = StaticURLParser('client')
     testapp = Cascade([static_server, app])
     httpserver.serve(testapp, host='127.0.0.1', port='8080')

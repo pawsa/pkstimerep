@@ -32,7 +32,7 @@ function UserListController($http) {
 };
 
 angular.module('PtsAdmin').component('userList', {
-    templateUrl: 'userList.html',
+    templateUrl: 'components/userList.html',
     controller: UserListController,
     bindings: {
     }
@@ -47,12 +47,12 @@ function UserAddController($http) {
     };
 
     ctrl.add = function () {
-	$http.post('user', {email: ctrl.email, realname: ctrl.realname,
+	$http.post('user', {email: ctrl.email, name: ctrl.name,
 			    password: ctrl.password,
 			    status: 'active'}).then(
 	    function (response) {	
 		ctrl.inputsShown = false;
-		ctrl.email = ctrl.realname = ctrl.password = '';
+		ctrl.email = ctrl.name = ctrl.password = '';
 		ctrl.onAdd();
 	    }).catch(function (err) {
 		console.log('error', err);
@@ -60,11 +60,11 @@ function UserAddController($http) {
     };	
 };
 
-var UserAddTemplate = "<button ng-click='$ctrl.showAdd()' ng-if='!$ctrl.inputsShown'>Add</button>"+
+var UserAddTemplate = "<button class='btn btn-default' ng-click='$ctrl.showAdd()' ng-if='!$ctrl.inputsShown'>Add</button>"+
     "<div ng-if='$ctrl.inputsShown'><input ng-model='$ctrl.email' placeholder='Email'>" +
-    "<input ng-model='$ctrl.realname' placeholder='Real Name'>" +
+    "<input ng-model='$ctrl.name' placeholder='Real Name'>" +
     "<input ng-model='$ctrl.password' placeholder='Password' type='password'>" +
-    "<button ng-click='$ctrl.add()'>Add</button></div>";
+    "<button class='btn btn-default' ng-click='$ctrl.add()'>Add</button></div>";
 
 angular.module('PtsAdmin').component('userAdd', {
     template: UserAddTemplate,
@@ -95,7 +95,7 @@ function HolidayController ($http) {
 };
 
 angular.module('PtsAdmin').component('holidays', {
-    templateUrl: 'holidays.html',
+    templateUrl: 'components/holidays.html',
     controller: HolidayController
 });
 

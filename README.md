@@ -55,6 +55,9 @@ internal access management, relying on the user status set in in a
 expirable token. When token expires or is not available, IAP identity
 is checked to reassert rights.
 
+Design note: to enable running the app as standard one via appengine,
+passlib was chosen over slighlty leaner bcrypt.
+
 The following endpoints are provided. Endpoints marked with * will be
 not provided by MVP. Appropriate access checks are executed.
 
@@ -84,3 +87,29 @@ POST /holiday { date: YYYY-MM-DD, name: NAME} Add a holiday
 GET /holiday?year=YYYY - list the holidays for given year (date, name, id)
 PATCH /holiday/id - change the name or date for given holiday
 *DELETE /holiday/id - delete given holiday
+
+Testing
+=======
+
+Local memory backend:
+ ./rundevserver.sh
+
+Datastore backend, requires Google SDK. You may need to install
+apt-get install google-cloud-sdk-app-engine-python google-cloud-sdk-datastore-emulator
+
+then, enable the libraries by setting:
+
+export PYTHONPATH=/usr/lib/google-cloud-sdk/platform/google_appengine:/usr/lib/google-cloud-sdk/platform/google_appengine/lib/yaml/lib
+
+If the list of requirements changed, you may need to run the following
+command to update it:
+
+./gdeploy.sh
+
+Finally, you will be able to
+
+dev_appserver.py app.yaml
+
+To deploy on the actual google cloud, run
+
+gcloud appengine deploy app.yaml

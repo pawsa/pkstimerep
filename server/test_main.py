@@ -131,8 +131,8 @@ class UserTest(unittest.TestCase):
         # Bad auth request
         response = r_post('/user/auth', {'email': 'a'})
         self.assertEqual(response.status_int, 400)
-        self.assertEqual(type(response.body), dict)
-        self.assertIn('detail', response.body)
+        self.assertEqual(type(response.body), str)
+        self.assertIn('detail', json.loads(response.body))
 
 
 class HolidayTest(unittest.TestCase):
